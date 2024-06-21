@@ -1,0 +1,235 @@
+LIST P=PIC18F452, F=INHX32,N=0, ST=OFF, R=HEX
+config OSC=HS,OSCS=OFF,WDT=OFF, BORV=45, PWRT=ON, BOR=ON, DEBUG=OFF,LVP=OFF,STVR=OFF
+#include<p18f452.inc>
+
+ORG 0x1A
+
+; RC0 --> RS=0/1 --> SendInstruction/SendData
+; RC1 --> RW=0/1 --> Write/Read 
+; RC2 --> E=H->L --> EnableSignal(450ns)
+
+CLRF TRISD
+BCF TRISC,RC0
+BCF TRISC,RC1
+BCF TRISC,RC2
+
+RCALL L_DELAY ; Long Delay
+
+BCF PORTC,RC1 ; WriteMode
+
+BCF PORTC,RC0 ; SendInstructions
+
+; Set Interface Length (8-bit mode, 2lines, 5x7)
+MOVLW b'00111000'
+RCALL Send
+
+; Enable Display/Cursor (Display On, Cursor On, CursorBlink On)
+MOVLW b'00001111'
+RCALL Send
+
+LOOP
+; -------------------------- Next Member (1) ------------------
+RCALL CLEAR
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'U'
+RCALL Send
+MOVLW a'm'
+RCALL Send
+MOVLW a'e'
+RCALL Send
+MOVLW a'r'
+RCALL Send
+
+; Move to next line
+BCF PORTC,RC0 ; SendInstructions
+MOVLW 0xC0
+RCALL Send
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'F'
+RCALL Send
+MOVLW a'A'
+RCALL Send
+MOVLW a'2'
+RCALL Send
+MOVLW a'1'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'B'
+RCALL Send
+MOVLW a'C'
+RCALL Send
+MOVLW a'E'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'0'
+RCALL Send
+MOVLW a'0'
+RCALL Send
+MOVLW a'8'
+RCALL Send
+
+RCALL L_DELAY
+
+; -------------------------- Next Member (2) ------------------
+RCALL CLEAR
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'A'
+RCALL Send
+MOVLW a'b'
+RCALL Send
+MOVLW a'd'
+RCALL Send
+MOVLW a'u'
+RCALL Send
+MOVLW a'l'
+RCALL Send
+MOVLW a'l'
+RCALL Send
+MOVLW a'a'
+RCALL Send
+MOVLW a'h'
+RCALL Send
+
+; Move to next line
+BCF PORTC,RC0 ; SendInstructions
+MOVLW 0xC0
+RCALL Send
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'F'
+RCALL Send
+MOVLW a'A'
+RCALL Send
+MOVLW a'2'
+RCALL Send
+MOVLW a'1'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'B'
+RCALL Send
+MOVLW a'C'
+RCALL Send
+MOVLW a'E'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'0'
+RCALL Send
+MOVLW a'1'
+RCALL Send
+MOVLW a'2'
+RCALL Send
+
+RCALL L_DELAY
+
+; -------------------------- Next Member (3) ------------------
+BCF PORTC,RC0 ; SendInstructions
+
+RCALL CLEAR
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'T'
+CALL Send
+MOVLW a'a'
+CALL Send
+MOVLW a'l'
+CALL Send
+MOVLW a'h'
+CALL Send
+MOVLW a'a'
+CALL Send
+
+; Move to next line
+BCF PORTC,RC0 ; SendInstructions
+MOVLW 0xC0
+RCALL Send
+
+BSF PORTC,RC0 ; SendData
+MOVLW a'F'
+RCALL Send
+MOVLW a'A'
+RCALL Send
+MOVLW a'2'
+RCALL Send
+MOVLW a'1'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'B'
+RCALL Send
+MOVLW a'C'
+RCALL Send
+MOVLW a'E'
+RCALL Send
+MOVLW a'-'
+RCALL Send
+MOVLW a'0'
+RCALL Send
+MOVLW a'2'
+RCALL Send
+MOVLW a'4'
+RCALL Send
+
+CALL L_DELAY
+
+BRA LOOP
+
+; ----------------subroutines--------------------
+Send
+MOVWF PORTD
+RCALL PULSE
+RCALL S_DELAY
+RCALL S_DELAY
+RETURN
+
+S_DELAY 
+MOVLW b'00001000'
+MOVWF T0CON
+MOVLW 0x10
+MOVWF TMR0H
+MOVLW 0x50
+MOVWF TMR0L
+BCF INTCON,TMR0IF
+BSF T0CON,TMR0ON
+AGAIN BTFSS INTCON,TMR0IF
+BRA AGAIN
+BCF T0CON, TMR0ON
+RETURN
+
+L_DELAY
+MOVLW b'00000100'
+MOVWF T0CON
+MOVLW 0x00
+MOVWF TMR0H
+MOVLW 0x00
+MOVWF TMR0L
+BCF INTCON,TMR0IF
+BSF T0CON,TMR0ON
+A2 BTFSS INTCON,TMR0IF
+BRA A2
+BCF T0CON, TMR0ON
+RETURN
+
+CLEAR
+BCF PORTC,RC0 ; SendInstructions
+; ClearScreen
+MOVLW b'00000001'
+RCALL Send
+; Move cursor to home
+MOVLW b'00000010'
+RCALL Send
+RETURN
+
+PULSE ; H -> L 
+BSF PORTC,RC2
+RCALL S_DELAY
+BCF PORTC,RC2
+RETURN
+
+END
